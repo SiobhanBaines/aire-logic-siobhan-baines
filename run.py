@@ -46,59 +46,54 @@ def get_song_titles(artist_name):
             song_titles.append(song_title)
                                 
         songs = len(tracks)
-        # print(song_titles, len(song_titles))
+        
         if total_songs !=0:
            total_songs += songs  
         else:
             total_songs = songs
     
-    print(f'This artist wrote {total_songs} songs.')
-    return(song_titles)    
+    return(song_titles, total_songs)    
 
 
-def get_lyrics(titles, artist_name):
-    print(titles, artist_name)
-    
+def get_lyrics(titles, artist_name, total_songs):
+    """
+    Calculate the total numbers of words in all the 
+    songs written by the chosen artist and decrement 
+    total number of songs where no lyrics are found.
+    """
     total_words = 0
     for title in titles:
 
-        print("title ", title)
-
         response = requests.get(LYRICS_OVH_GET.format(artist_name, title))
-        song = response.json()
-        # print(song)
-        song_lyrics = song['lyrics']
-        # print(song_lyrics)
-        word_count = 0
-        for lyric in song_lyrics:
-            lyric = lyric.strip()
-            lyric = lyric.lower()
-            lyric = lyric.translate(lyric.maketrans("", "", string.punctuation))
-            words = lyric.split()
-            # total_words = len(words)
-            # print(total_words)
+        try:
+            song = response.json()
+            try:
+                song_lyrics = song['lyrics']
 
-            for word in words:
+                word_count = 0
+                for lyric in song_lyrics:
+                    lyric = lyric.strip()
+                    lyric = lyric.lower()
+                    lyric = lyric.translate(lyric.maketrans("", "", string.punctuation))
+                    words = lyric.split()
+                    
+                    for word in words:
+                        if word_count != 0:
+                            word_count = word_count + 1
+                        else:
+                            word_count = 1
+
                 if word_count != 0:
-                    word_count = word_count + 1
-                else:
-                    word_count = 1
+                    if total_words != 0:
+                        total_words = total_words + word_count
+                    else:
+                        total_words = word_count
 
-        print("word_count ",word_count)
-        if word_count != 0:
-            if total_words != 0:
-                total_words = total_words + word_count
-            else:
-                total_words = word_count
-
-        # except:
-        #     print("no lyrics in this song")
-        #     total_songs -= 1
-
-    print(total_songs)        
-    print(total_words)
+            except:
+                total_songs -= 1
+        except:
+            print(f'')
     return(total_words, total_songs)
-    # print(total_words)  
 
 
 def main():
@@ -106,25 +101,23 @@ def main():
     main calls all the other functions
     """
     artist_name = input("Enter the name of the artist to search:")
-    print("You entered: " + artist_name)
+    print(f'Please wait while the artist average number of words in their songs')
     
-    titles = get_song_titles(artist_name)
+    titles, total_songs = get_song_titles(artist_name)
     if titles == None:
         print(f'{artist_name}, has not songs in MusicBrainz')
         return
 
-    words = get_lyrics(titles, artist_name)
-    
-    print(f'This artist wrote {total_songs} songs.')
-    print(total_words)
+    total_words, total_songs = get_lyrics(titles, artist_name, total_songs)
 
-    # calculate_average_words()
-# from urllib2 import Request, urlopen
+    if total_songs == 0:
+        print(f'We cannot find any songs by {artist_name}.')
+    elif total_words == 0:
+        print(f'We cannot find any words to the songs written by {artist_name}.')
+    else:
+        average_words = round(total_words / total_songs)
 
-# request = Request('https://api.lyrics.ovh/v1/artist/title')
-
-# response_body = urlopen(request).read()
-# print response_body
+        print(f'The average number of words in songs written by {artist_name} is {average_words}.')
 
 
 main()
