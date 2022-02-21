@@ -16,6 +16,7 @@ def get_song_titles(artist_name):
     """
     songs = 0
     total_songs = 0
+    total_words = 0
     song_titles = []
     
     musicbrainzngs.set_useragent(
@@ -53,47 +54,48 @@ def get_song_titles(artist_name):
             total_songs = songs
     
     print(f'This artist wrote {total_songs} songs.')
-    return(song_titles)    
+    return(song_titles, total_songs)    
 
 
 def get_lyrics(titles, artist_name):
-    # print("titles ", titles)
-    # print("artist_name ", artist_name)
     for title in titles:
         
+        response = requests.get(LYRICS_OVH_GET.format(artist_name, title))
+        song = response.json()
+        # try:
+        song_lyrics = song['lyrics']
         print("title ", title)
 
-        response = requests.get(LYRICS_OVH_GET.format(artist_name, title))
-        song_lyrics = response.json()
-        # print(song_lyrics)
-        # lyrics = song_lyrics['lyrics']
-        # print(lyrics)
+        for lyric in song_lyrics:
+            lyric = lyric.strip()
+            lyric = lyric.lower()
+            lyric = lyric.translate(lyric.maketrans("", "", string.punctuation))
+            words = lyric.split()
+            # total_words = len(words)
+            # print(total_words)
 
         word_count = 0
-        print(song_lyrics)
-        for line in song_lyrics:
-            print(line)
-            # # print(line)
-            # line = line.strip()
-            # line = line.lower()
-            # # print(string.punctuation)
-            # line = line.translate(line.maketrans("", "", string.punctuation))
-            words = line.split()
-            print("words ", words)
-            total_words = len(words)
-            for word in words:
-                print("word , ", word)
-                if word_count != 0:
-                # print("word in dict")
-                    word_count = word_count + 1
-                else:
-                    word_count = 1
-                #     print("word not in dict")
-                #     print(word)
-                #     dict[word] = 1
+        for word in words:
+            if word_count != 0:
+                word_count = word_count + 1
+            else:
+                word_count = 1
 
-        print("word_count ",word_count)  
-        print(total_words)  
+        print("word_count ",word_count)
+        if word_count != 0:
+            if total_words != 0:
+                total_words = total_words + word_count
+            else:
+                total_words = word_count
+
+        # except:
+        #     print("no lyrics in this song")
+        #     total_songs -= 1
+
+    print(total_songs)        
+    print(total_words)
+    return(total_words, total_songs)
+    # print(total_words)  
 
 
 def main():
@@ -109,7 +111,9 @@ def main():
         return
 
     words = get_lyrics(titles, artist_name)
-    print(words)
+    
+    print(f'This artist wrote {total_songs} songs.')
+    print(total_words)
 
     # calculate_average_words()
 # from urllib2 import Request, urlopen
